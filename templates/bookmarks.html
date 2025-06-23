@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-3">
+      <div class="profile-sidebar">
+        <h3>{{ current_user.username }}</h3>
+        <p class="text-muted">{{ current_user.email }}</p>
+        <hr>
+        <ul class="nav flex-column">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('profile') }}">
+              <i class="fas fa-cog"></i> Settings
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="{{ url_for('bookmarks') }}">
+              <i class="fas fa-bookmark"></i> My Bookmarks
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('reading_history') }}">
+              <i class="fas fa-history"></i> Reading History
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="col-md-9">
+      <div class="content-card">
+        <h2 class="mb-4">Saved Articles</h2>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-info">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% if bookmarks %}
+        <div class="row articles-grid">
+          {% for bookmark in bookmarks %}
+          <div class="col-md-6 mb-4">
+            <div class="article-card">
+              {% if bookmark.article_image_url %}
+              <img src="{{ bookmark.article_image_url }}" class="card-img-top" alt="{{ bookmark.article_title }}"
+                loading="lazy">
+              {% else %}
+              <div class="no-image">{{ bookmark.article_source }}</div>
+              {% endif %}
+              <div class="card-body">
+                {% if bookmark.article_category %}
+                <span class="category-tag">{{ bookmark.article_category }}</span>
+                {% endif %}
+                <h5>{{ bookmark.article_title }}</h5>
+                <p class="meta">
+                  <i class="fas fa-clock"></i> {{ bookmark.created_at.strftime('%Y-%m-%d') }} -
+                  <i class="fas fa-newspaper"></i> {{ bookmark.article_source }}
+                </p>
+                <div class="d-flex justify-content-between">
+                  <a href="{{ bookmark.article_url }}" target="_blank" class="btn btn-read">Read</a>
+                  <form method="POST" action="{{ url_for('remove_bookmark', bookmark_id=bookmark.id) }}">
+                    <button type="submit" class="btn btn-danger">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+          <i class="fas fa-bookmark fa-3x mb-3 text-muted"></i>
+          <h4>No saved articles yet</h4>
+          <p class="text-muted">Start browsing news and save your favorite articles!</p>
+          <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Browse News</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

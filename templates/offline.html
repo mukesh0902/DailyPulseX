@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="offline-container text-center">
+    <i class="fas fa-wifi-slash offline-icon"></i>
+    <h2>You're Offline</h2>
+    <p class="lead">Unable to connect to DailyPulseX. Please check your internet connection.</p>
+
+    <div class="mt-4">
+      <button class="btn btn-primary reload-btn" onclick="window.location.reload()">
+        <i class="fas fa-sync-alt"></i> Try Again
+      </button>
+    </div>
+
+    <div class="cached-content mt-5">
+      <h3>Cached Content</h3>
+      <p>You can still view previously loaded articles:</p>
+
+      <div class="cached-links mt-3">
+        <a href="/" class="btn btn-outline-primary">Homepage</a>
+        {% if current_user.is_authenticated %}
+        <a href="/bookmarks" class="btn btn-outline-primary">Your Bookmarks</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Check for network status changes
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+  });
+</script>
+{% endblock %}

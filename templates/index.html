@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div id="featuredCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            {% set articles_with_image = articles | selectattr('image_url') | list %}
+            {% for article in articles_with_image[:3] %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <div class="featured-card">
+                    {% if article.image_url %}
+                    <img src="{{ article.image_url }}" class="d-block w-100 image" alt="{{ article.title }}">
+                    {% else %}
+                    <div class="no-image">{{ article.source_name }}</div>
+                    {% endif %}
+                    <div class="carousel-caption">
+                        <h3>{{ article.title }}</h3>
+                        <div class="btn-group">
+                            <button class="btn btn-describe" data-title="{{ article.title }}"
+                                data-id="desc-feature-{{ loop.index }}">
+                                <i class="fas fa-robot"></i> AI Describe
+                            </button>
+
+                            {% if current_user.is_authenticated %}
+                            <form method="POST" action="{{ url_for('save_bookmark') }}" class="d-inline">
+                                <input type="hidden" name="title" value="{{ article.title }}">
+                                <input type="hidden" name="url" value="{{ article.link }}">
+                                <input type="hidden" name="source" value="{{ article.source_name }}">
+                                <input type="hidden" name="image_url" value="{{ article.image_url }}">
+                                {% if article.category %}
+                                <input type="hidden" name="category" value="{{ article.category[0] }}">
+                                {% endif %}
+                                <button type="submit" class="btn btn-save">
+                                    <i class="fas fa-bookmark"></i> Save
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            <a href="{{ article.link }}" target="_blank" class="btn btn-read track-read"
+                                data-title="{{ article.title }}" data-source="{{ article.source_name }}"
+                                data-url="{{ article.link }}">
+                                <i class="fas fa-external-link-alt"></i> Read More
+                            </a>
+                        </div>
+                        <div class="description" id="desc-feature-{{ loop.index }}"></div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#featuredCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#featuredCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+        {% for message in messages %}
+        {{ message }}
+        {% endfor %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="row mt-4 articles-grid">
+        {% if articles %}
+        {% for article in articles[3:] %}
+        <div class="col-md-4 col-sm-6 mb-4">
+            <div class="article-card">
+                {% if article.image_url %}
+                <img src="{{ article.image_url }}" class="card-img-top" alt="{{ article.title }}" loading="lazy">
+                {% else %}
+                <div class="no-image">{{ article.source_name }}</div>
+                {% endif %}
+                <div class="card-body">
+                    <span class="category-tag">{{ article.category[0] if article.category else 'General' }}</span>
+                    <h5>{{ article.title }}</h5>
+                    <p class="meta"><i class="fas fa-clock"></i> {{ article.pubDate.split(' ')[0] }} - <i
+                            class="fas fa-newspaper"></i> {{ article.source_name }}</p>
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-describe" data-title="{{ article.title }}"
+                            data-id="desc-{{ loop.index }}">
+                            <i class="fas fa-robot"></i> AI Describe
+                        </button>
+
+                        {% if current_user.is_authenticated %}
+                        <form method="POST" action="{{ url_for('save_bookmark') }}" class="d-inline">
+                            <input type="hidden" name="title" value="{{ article.title }}">
+                            <input type="hidden" name="url" value="{{ article.link }}">
+                            <input type="hidden" name="source" value="{{ article.source_name }}">
+                            <input type="hidden" name="image_url" value="{{ article.image_url }}">
+                            {% if article.category %}
+                            <input type="hidden" name="category" value="{{ article.category[0] }}">
+                            {% endif %}
+                            <button type="submit" class="btn btn-save">
+                                <i class="fas fa-bookmark"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    <div class="description" id="desc-{{ loop.index }}"></div>
+                    <a href="{{ article.link }}" target="_blank" class="btn btn-read track-read"
+                        data-title="{{ article.title }}" data-source="{{ article.source_name }}"
+                        data-url="{{ article.link }}">
+                        Read More
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="no-articles text-center">No articles found.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Cache articles for offline use
+    document.addEventListener('DOMContentLoaded', () => {
+        {% if articles %}
+        try {
+            cacheArticles({{ articles| tojson }});
+
+    // Hide skeletons since we have content
+    const articlesGrid = document.querySelector('.articles-grid');
+    const carouselInner = document.querySelector('.carousel-inner');
+
+    // This will run only after the DOM is fully loaded with content
+    if (window.loadingManager) {
+        if (articlesGrid) window.loadingManager.hideSkeletons(articlesGrid.parentNode);
+        if (carouselInner) window.loadingManager.hideSkeletons(carouselInner.parentNode);
+    }
+        } catch (error) {
+        console.error('Error caching articles:', error);
+    }
+    {% endif %}
+
+    // Reading History Tracking
+    if (document.querySelector('.track-read')) {
+        document.querySelectorAll('.track-read').forEach(link => {
+            link.addEventListener('click', function (e) {
+                // Only proceed if user is logged in
+                {% if current_user.is_authenticated %}
+                const title = this.getAttribute('data-title');
+                const source = this.getAttribute('data-source');
+                const url = this.getAttribute('data-url');
+
+                // Track the read
+                fetch('/track-read/' + encodeURIComponent(url), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'title': title,
+                        'source': source
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Reading tracked:', data);
+                    })
+                    .catch(error => {
+                        console.error('Error tracking reading:', error);
+                    });
+                {% endif %}
+            });
+        });
+    }
+
+    // // Language change handler - refresh descriptions when language changes
+    // const languageLinks = document.querySelectorAll('#languageDropdown + .dropdown-menu .dropdown-item');
+    // languageLinks.forEach(link => {
+    //     link.addEventListener('click', () => {
+    //         // Store click for potential refresh of already loaded descriptions
+    //         localStorage.setItem('languageChanged', 'true');
+    //     });
+    // });
+
+    // // Check if we need to refresh descriptions after language change
+    // if (localStorage.getItem('languageChanged') === 'true') {
+    //     if (typeof window.refreshDescriptionsWithLanguage === 'function') {
+    //         window.refreshDescriptionsWithLanguage();
+    //     }
+    //     localStorage.removeItem('languageChanged');
+    // }
+    // });
+</script>
+{% endblock %}

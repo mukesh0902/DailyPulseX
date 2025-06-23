@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="{{ current_language }}">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DailyPulseX - Breaking News</title>
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#6b48ff">
+  <meta name="description" content="Your go-to source for breaking news and in-depth stories from around the globe">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DailyPulseX">
+
+  <!-- PWA Icons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
+  <!-- Stylesheets -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% block styles %}{% endblock %}
+</head>
+
+<body>
+  <header class="header">
+    <div class="container-fluid">
+      <div class="row align-items-center">
+        <div class="col-6 col-md-3">
+          <div class="logo-container">
+            <a href="/" class="logo"><i class="fas fa-bolt"></i>DailyPulseX</a>
+          </div>
+        </div>
+        <div class="col-md-6 d-none d-md-block">
+          <div class="ticker">
+            <span class="ticker-label">Breaking News:</span>
+            <marquee behavior="scroll" direction="left">
+              {% if breaking_news %}
+              {% for article in breaking_news %}
+              {{ article.title }} &nbsp; | &nbsp;
+              {% endfor %}
+              {% else %}
+              Welcome to DailyPulseX - Your Source for Breaking News!
+              {% endif %}
+            </marquee>
+          </div>
+        </div>
+        <div class="col-6 col-md-3 text-end">
+          <div class="d-flex justify-content-end align-items-center">
+            <button id="theme-toggle" class="btn btn-theme me-2"><i class="fas fa-adjust"></i></button>
+            {% if current_user.is_authenticated %}
+            <div class="dropdown d-inline-block">
+              <button class="btn btn-user dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <i class="fas fa-user-circle"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('bookmarks') }}">Bookmarks</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reading_history') }}">History</a></li>
+                <li>
+                  <hr class="dropdown-divider">
+                </li>
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+              </ul>
+            </div>
+            {% else %}
+            <div class="auth-buttons">
+              <a href="{{ url_for('login') }}" class="btn btn-login btn-sm">Login</a>
+              <a href="{{ url_for('register') }}" class="btn btn-register btn-sm">Sign Up</a>
+            </div>
+            {% endif %}
+          </div>
+          {% if last_updated %}
+          <small class="last-updated d-none d-md-block">Updated: {{ last_updated }}</small>
+          {% endif %}
+        </div>
+      </div>
+      <div class="row d-md-none mt-2">
+        <div class="col-12">
+          <div class="ticker">
+            <span class="ticker-label">Breaking:</span>
+            <marquee behavior="scroll" direction="left">
+              {% if breaking_news %}
+              {% for article in breaking_news %}
+              {{ article.title }} &nbsp; | &nbsp;
+              {% endfor %}
+              {% else %}
+              Welcome to DailyPulseX - Your Source for Breaking News!
+              {% endif %}
+            </marquee>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              Category: {% if current_category and current_category != 'all' %}{{ dict(categories).get(current_category,
+              'All') }}{% else %}All{% endif %}
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
+              {% for cat_id, cat_name in categories %}
+              <li><a class="dropdown-item"
+                  href="/?category={{ cat_id }}{% if current_country %}&country={{ current_country }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_language %}&lang={{ current_language }}{% endif %}">{{
+                  cat_name }}</a></li>
+              {% endfor %}
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="countryDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              Country: {% if current_country %}{{ dict(countries).get(current_country, 'All') }}{% else %}All{% endif %}
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="countryDropdown">
+              {% for country_code, country_name in countries %}
+              <li><a class="dropdown-item"
+                  href="/?country={{ country_code }}{% if current_category and current_category != 'all' %}&category={{ current_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_language %}&lang={{ current_language }}{% endif %}">{{
+                  country_name }}</a></li>
+              {% endfor %}
+            </ul>
+          </li>
+          <!-- <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown"
+              data-current-lang="{{ current_language }}" aria-expanded="false">
+              Language: {% if current_language %}{{ dict(languages).get(current_language, 'English') }}{% else
+              %}English{% endif %}
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="languageDropdown">
+              {% for lang_code, lang_name in languages %}
+              <li><a class="dropdown-item"
+                  href="/?lang={{ lang_code }}{% if current_country %}&country={{ current_country }}{% endif %}{% if current_category and current_category != 'all' %}&category={{ current_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">{{
+                  lang_name }}</a></li>
+              {% endfor %}
+            </ul>
+          </li> -->
+        </ul>
+        <form class="d-flex search-form" method="get" action="/">
+          <input type="text" class="form-control me-2" name="q" placeholder="Search..." value="{{ search_query }}">
+          <input type="hidden" name="category" value="{{ current_category }}">
+          <input type="hidden" name="country" value="{{ current_country }}">
+          <!-- <input type="hidden" name="lang" value="{{ current_language }}"> -->
+          <button class="btn btn-search" type="submit"><i class="fas fa-search"></i></button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+  <!-- PWA Install Button -->
+  <button id="install-app" class="install-button d-none">
+    <i class="fas fa-download icon"></i> Install App
+  </button>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4">
+          <h4>About DailyPulseX</h4>
+          <p>Your go-to source for breaking news and in-depth stories from around the globe.</p>
+        </div>
+        <div class="col-md-4">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="#privacy">Privacy Policy</a></li>
+            <li><a href="#terms">Terms of Service</a></li>
+            <li><a href="#contact">Contact Us</a></li>
+          </ul>
+        </div>
+        <div class="col-md-4">
+          <h4>Follow Us</h4>
+          <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+      <p class="text-center mt-3">© 2025 DailyPulseX. Powered by Newsdata.io API and Gemini API.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Theme Toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('light-theme');
+      localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+    });
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-theme');
+    }
+  </script>
+
+  <!-- PWA Script -->
+  <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+
+  <!-- Loading States Script -->
+  <script src="{{ url_for('static', filename='js/loading.js') }}"></script>
+
+  <!-- Translation Script -->
+  <script src="{{ url_for('static', filename='js/translation.js') }}"></script>
+
+  <!-- AI Features Script -->
+  <script src="{{ url_for('static', filename='js/ai-features.js') }}"></script>
+
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>
