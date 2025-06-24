@@ -12,7 +12,7 @@ from flask_migrate import Migrate
 from werkzeug.urls import url_parse
 from models import db, User, Bookmark, ReadingHistory
 from forms import LoginForm, RegistrationForm, ProfileSettingsForm
-from googletrans import Translator
+# from googletrans import Translator
 
 # Load environment variables
 load_dotenv()
@@ -37,7 +37,7 @@ limiter = Limiter(
 )
 
 # Initialize Translator
-translator = Translator()
+# translator = Translator()
 
 # API keys from environment variables with fallbacks
 NEWS_DATA_API_KEY = os.environ.get('NEWS_DATA_API_KEY')
@@ -76,8 +76,8 @@ COUNTRIES = [
 
 # Define supported languages
 LANGUAGES = [
-    ('en', 'English'),
-    ('hi', 'Hindi')
+    ('en', 'English')
+
 ]
 
 @login_manager.user_loader
@@ -182,17 +182,17 @@ Keep it under 200 words.
     return description
 
 # For translating text content
-def translate_text(text, target_language='en'):
-    """Translate text to target language using Google Translate API"""
-    if not text or target_language == 'en':
-        return text
+# def translate_text(text, target_language='en'):
+#     """Translate text to target language using Google Translate API"""
+#     if not text or target_language == 'en':
+#         return text
     
-    try:
-        translation = translator.translate(text, dest=target_language)
-        return translation.text
-    except Exception as e:
-        print(f"Translation error: {e}")
-        return text  # Return original text if translation fails
+#     try:
+#         translation = translator.translate(text, dest=target_language)
+#         return translation.text
+#     except Exception as e:
+#         print(f"Translation error: {e}")
+#         return text  # Return original text if translation fails
 
 @app.route('/')
 def index():
@@ -201,7 +201,7 @@ def index():
     language = request.args.get('lang', 'en')  # Default to English
     
     # Save language preference in session
-    session['language'] = language
+    # session['language'] = language
     
     # Use user preferences if logged in and no specific filters are provided
     if current_user.is_authenticated and not (request.args.get('country') or request.args.get('category')):
@@ -225,14 +225,14 @@ def index():
     breaking_news = articles[:5] if articles else []
     
     # Only translate titles if language is Hindi
-    if language == 'hi' and articles:
-        # Translate article titles
-        for article in articles:
-            article['title'] = translate_text(article['title'], language)
+    # if language == 'hi' and articles:
+        # # Translate article titles
+        # for article in articles:
+        #     article['title'] = translate_text(article['title'], language)
             
-        # Translate breaking news titles
-        for article in breaking_news:
-            article['title'] = translate_text(article['title'], language)
+        # # Translate breaking news titles
+        # for article in breaking_news:
+        #     article['title'] = translate_text(article['title'], language)
 
     return render_template(
         'index.html',
@@ -432,8 +432,8 @@ def describe():
     description = get_gemini_description(title)
     
     # Translate description if language is not English
-    if language != 'en':
-        description = translate_text(description, language)
+    # if language != 'en':
+    #     description = translate_text(description, language)
     
     return jsonify({'desc': description})
 
